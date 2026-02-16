@@ -15,7 +15,7 @@ class TestEnhancedRetryLogic:
         self, mock_hass, mock_auth_client
     ):
         """Test that session-based auth allows up to 4 retries."""
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         # Mock session-based authentication
         mock_auth_client.refresh_token = "session_based"
@@ -52,7 +52,7 @@ class TestEnhancedRetryLogic:
         self, mock_hass, mock_auth_client
     ):
         """Test that session-based auth uses progressive delays."""
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         # Mock session-based authentication
         mock_auth_client.refresh_token = "session_based"
@@ -86,7 +86,7 @@ class TestEnhancedRetryLogic:
         self, mock_hass, mock_auth_client
     ):
         """Test that OAuth tokens still only allow 1 retry."""
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         # Mock OAuth authentication (not session-based)
         mock_auth_client.refresh_token = "real_oauth_refresh_token"
@@ -123,7 +123,7 @@ class TestEnhancedRetryLogic:
         self, mock_hass, mock_auth_client
     ):
         """Test that session-based auth stops after max retries."""
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         # Mock session-based authentication
         mock_auth_client.refresh_token = "session_based"
@@ -153,7 +153,7 @@ class TestEnhancedRetryLogic:
         self, mock_hass, mock_auth_client
     ):
         """Test that session-based auth uses progressive delays."""
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         # Mock session-based authentication
         mock_auth_client.refresh_token = "session_based"

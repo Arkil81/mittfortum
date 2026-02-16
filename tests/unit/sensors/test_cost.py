@@ -45,6 +45,7 @@ class TestMittFortumCostSensor:
         return MittFortumCostSensor(
             coordinator=mock_coordinator,
             device=mock_device,
+            locale="SV",
         )
 
     def test_sensor_properties(self, sensor):

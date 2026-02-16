@@ -17,11 +17,37 @@ class TestOAuth2AuthClient:
             hass=mock_hass,
             username="test@example.com",
             password="test_password",
+            locale="SV",
         )
 
         assert client._username == "test@example.com"
         assert client._password == "test_password"
+        assert client._locale == "SV"
         assert client._hass == mock_hass
+
+    def test_init_with_finnish_locale(self, mock_hass):
+        """Test initialization with Finnish locale."""
+        client = OAuth2AuthClient(
+            hass=mock_hass,
+            username="test@example.com",
+            password="test_password",
+            locale="FI",
+        )
+
+        assert client._locale == "FI"
+        assert client._redirect_uri == "https://www.fortum.com/fi/sahkoa/api/auth/callback/ciamprod"
+
+    def test_init_with_swedish_locale(self, mock_hass):
+        """Test initialization with Swedish locale."""
+        client = OAuth2AuthClient(
+            hass=mock_hass,
+            username="test@example.com",
+            password="test_password",
+            locale="SV",
+        )
+
+        assert client._locale == "SV"
+        assert client._redirect_uri == "https://www.fortum.com/se/el/api/auth/callback/ciamprod"
 
     def test_is_token_expired_no_expiry(self, mock_hass):
         """Test token expiry check with no expiry set."""
@@ -29,6 +55,7 @@ class TestOAuth2AuthClient:
             hass=mock_hass,
             username="test@example.com",
             password="test_password",
+            locale="SV",
         )
 
         assert client.is_token_expired() is True
@@ -40,6 +67,7 @@ class TestOAuth2AuthClient:
             hass=mock_hass,
             username="test@example.com",
             password="test_password",
+            locale="SV",
         )
         client._token_expiry = 2000
 
@@ -52,6 +80,7 @@ class TestOAuth2AuthClient:
             hass=mock_hass,
             username="test@example.com",
             password="test_password",
+            locale="SV",
         )
         client._token_expiry = 1000
 
@@ -66,6 +95,7 @@ class TestOAuth2AuthClient:
             hass=mock_hass,
             username="test@example.com",
             password="test_password",
+            locale="SV",
         )
 
         with (
@@ -77,6 +107,7 @@ class TestOAuth2AuthClient:
             patch.object(client, "_perform_sso_authentication") as mock_sso_auth,
             patch.object(client, "_complete_oauth_authorization") as mock_complete_auth,
             patch.object(client, "_verify_session_established") as mock_verify_session,
+            patch.object(client, "start_token_monitoring") as mock_start_monitoring,
         ):
             # Mock the async context manager for the client
             mock_client = AsyncMock()
@@ -101,6 +132,55 @@ class TestOAuth2AuthClient:
             assert result.access_token == "test_access_token"
             assert result.id_token == "test_id_token"
             assert client._tokens.access_token == "test_access_token"
+            mock_start_monitoring.assert_called_once()
+
+    async def test_authenticate_success_finnish(self, mock_hass, sample_auth_tokens):
+        """Test successful authentication with Finnish locale."""
+        # Set up mock_hass.data for get_async_client
+        mock_hass.data = {}
+
+        client = OAuth2AuthClient(
+            hass=mock_hass,
+            username="test@example.com",
+            password="test_password",
+            locale="FI",
+        )
+
+        with (
+            patch(
+                "custom_components.mittfortum.api.auth.get_async_client"
+            ) as mock_get_client,
+            patch.object(client, "_initialize_fortum_session") as mock_init_session,
+            patch.object(client, "_initiate_oauth_signin") as mock_oauth_signin,
+            patch.object(client, "_perform_sso_authentication") as mock_sso_auth,
+            patch.object(client, "_complete_oauth_authorization") as mock_complete_auth,
+            patch.object(client, "_verify_session_established") as mock_verify_session,
+            patch.object(client, "start_token_monitoring") as mock_start_monitoring,
+        ):
+            # Mock the async context manager for the client
+            mock_client = AsyncMock()
+            mock_client.cookies.jar = []  # Empty cookie jar
+            mock_get_client.return_value.__aenter__.return_value = mock_client
+
+            # Set up method return values
+            mock_init_session.return_value = "csrf_token_123"
+            mock_oauth_signin.return_value = "https://oauth.url"
+            mock_sso_auth.return_value = None
+            mock_complete_auth.return_value = None
+            mock_verify_session.return_value = {
+                "user": {
+                    "accessToken": "test_access_token_fi",
+                    "idToken": "test_id_token_fi",
+                    "expires": "2024-12-31T23:59:59Z",
+                }
+            }
+
+            result = await client.authenticate()
+
+            assert result.access_token == "test_access_token_fi"
+            assert result.id_token == "test_id_token_fi"
+            assert client._tokens.access_token == "test_access_token_fi"
+            mock_start_monitoring.assert_called_once()
 
     async def test_authenticate_failure(self, mock_hass):
         """Test authentication failure."""
@@ -111,6 +191,7 @@ class TestOAuth2AuthClient:
             hass=mock_hass,
             username="test@example.com",
             password="test_password",
+            locale="SV",
         )
 
         with patch.object(
@@ -130,6 +211,7 @@ class TestOAuth2AuthClient:
             hass=mock_hass,
             username="test@example.com",
             password="test_password",
+            locale="SV",
         )
 
         # Set up session-based tokens
@@ -152,6 +234,7 @@ class TestOAuth2AuthClient:
             hass=mock_hass,
             username="test@example.com",
             password="test_password",
+            locale="SV",
         )
 
         with pytest.raises(AuthenticationError, match="No refresh token available"):
@@ -168,6 +251,7 @@ class TestOAuth2AuthClient:
             hass=mock_hass,
             username="test@example.com",
             password="test_password",
+            locale="SV",
         )
 
         # Set up real OAuth tokens
@@ -214,6 +298,7 @@ class TestOAuth2AuthClient:
             hass=mock_hass,
             username="test@example.com",
             password="test_password",
+            locale="SV",
         )
 
         # Mock session data response

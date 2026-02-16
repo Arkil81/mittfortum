@@ -15,7 +15,7 @@ class TestRetryLogic:
         self, mock_hass, mock_auth_client
     ):
         """Test that _get retries request once when token expires."""
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         # Mock successful second request
         mock_response = Mock()
@@ -55,7 +55,7 @@ class TestRetryLogic:
         self, mock_hass, mock_auth_client
     ):
         """Test that _get doesn't retry infinitely."""
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         async def mock_handle_response(response):
             # Always fail with token expired
@@ -82,7 +82,7 @@ class TestRetryLogic:
         self, mock_hass, mock_auth_client
     ):
         """Test that _get doesn't retry on other API errors."""
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         call_count = 0
 
@@ -114,7 +114,7 @@ class TestRetryLogic:
         self, mock_hass, mock_auth_client
     ):
         """Test that _get wraps non-APIError exceptions properly."""
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         with patch.object(client, "_ensure_valid_token", new_callable=AsyncMock):
             with patch(

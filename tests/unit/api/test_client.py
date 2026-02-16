@@ -14,16 +14,25 @@ class TestFortumAPIClient:
 
     def test_init(self, mock_hass, mock_auth_client):
         """Test initialization."""
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         assert client._hass == mock_hass
         assert client._auth_client == mock_auth_client
+        assert client._locale == "SV"
+
+    def test_init_with_finnish_locale(self, mock_hass, mock_auth_client):
+        """Test initialization with Finnish locale."""
+        client = FortumAPIClient(mock_hass, mock_auth_client, "FI")
+
+        assert client._hass == mock_hass
+        assert client._auth_client == mock_auth_client
+        assert client._locale == "FI"
 
     async def test_get_customer_id_success(self, mock_hass, mock_auth_client):
         """Test successful customer ID extraction."""
         mock_auth_client.id_token = "test_token"
 
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         with patch("jwt.decode") as mock_decode:
             mock_decode.return_value = {"customerid": [{"crmid": "customer_123"}]}
@@ -37,7 +46,7 @@ class TestFortumAPIClient:
         mock_auth_client.id_token = None
         mock_auth_client.session_data = None
 
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         with pytest.raises(APIError, match="No ID token or session data available"):
             await client.get_customer_id()
@@ -47,7 +56,7 @@ class TestFortumAPIClient:
         mock_auth_client.session_data = {"user": {"customerId": "session_customer_123"}}
         mock_auth_client.id_token = "session_based"
 
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         result = await client.get_customer_id()
 
@@ -60,7 +69,7 @@ class TestFortumAPIClient:
         mock_auth_client.session_data = None
         mock_auth_client.id_token = "session_based"
 
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         with pytest.raises(APIError, match="Customer ID not found in session data"):
             await client.get_customer_id()
@@ -69,7 +78,7 @@ class TestFortumAPIClient:
         self, mock_hass, mock_auth_client, sample_customer_details
     ):
         """Test successful customer details fetch."""
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         # Mock response data from session endpoint
         mock_response = Mock()
@@ -93,7 +102,7 @@ class TestFortumAPIClient:
         self, mock_hass, mock_auth_client, sample_consumption_data
     ):
         """Test successful total consumption fetch."""
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         with patch.object(
             client, "get_consumption_data", return_value=sample_consumption_data
@@ -107,7 +116,7 @@ class TestFortumAPIClient:
         self, mock_hass, mock_auth_client
     ):
         """Test total consumption fetch with no metering points."""
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         with patch.object(client, "get_metering_points", return_value=[]):
             with pytest.raises(APIError, match="No metering points found"):
@@ -115,7 +124,7 @@ class TestFortumAPIClient:
 
     async def test_ensure_valid_token_session_based(self, mock_hass, mock_auth_client):
         """Test _ensure_valid_token with session-based token."""
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         # Mock token as expired and session-based
         mock_auth_client.is_token_expired.return_value = True
@@ -129,7 +138,7 @@ class TestFortumAPIClient:
         self, mock_hass, mock_auth_client
     ):
         """Test _ensure_valid_token with real OAuth2 refresh token."""
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         # Mock token as expired with real refresh token
         mock_auth_client.is_token_expired.return_value = True
@@ -141,7 +150,7 @@ class TestFortumAPIClient:
 
     async def test_ensure_valid_token_not_expired(self, mock_hass, mock_auth_client):
         """Test _ensure_valid_token with valid token."""
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         # Mock token as not expired and not needing renewal
         mock_auth_client.is_token_expired.return_value = False
@@ -157,7 +166,7 @@ class TestFortumAPIClient:
         self, mock_hass, mock_auth_client
     ):
         """Test _ensure_valid_token with no refresh token."""
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         # Mock token as expired with no refresh token
         mock_auth_client.is_token_expired.return_value = True
@@ -177,7 +186,7 @@ class TestFortumAPIClient:
         mock_auth_client.session_cookies = {"sessionid": "test_session"}
         mock_auth_client.is_token_expired.return_value = False
 
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         # Test tRPC endpoint
         trpc_url = (
@@ -226,7 +235,7 @@ class TestFortumAPIClient:
         mock_auth_client.session_cookies = {"sessionid": "test_session"}
         mock_auth_client.is_token_expired.return_value = False
 
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         # Test non-tRPC endpoint
         api_url = "https://www.fortum.com/se/el/api/some-other-endpoint"
@@ -272,7 +281,7 @@ class TestFortumAPIClient:
         mock_auth_client.session_cookies = {"sessionid": "test_session"}
         mock_auth_client.is_token_expired.return_value = False
 
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         # Test session endpoint
         session_url = "https://www.fortum.com/se/el/api/auth/session"
@@ -313,7 +322,7 @@ class TestFortumAPIClient:
         mock_auth_client.session_cookies = {"sessionid": "test_session"}
         mock_auth_client.is_token_expired.return_value = False
 
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         # tRPC endpoint URL
         trpc_url = (
@@ -357,7 +366,7 @@ class TestFortumAPIClient:
         mock_auth_client.session_cookies = {"sessionid": "test_session"}
         mock_auth_client.is_token_expired.return_value = False
 
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         # Non-tRPC API endpoint
         api_url = "https://www.fortum.com/se/el/api/some-other-endpoint"
@@ -394,7 +403,7 @@ class TestFortumAPIClient:
         mock_auth_client.is_token_expired.return_value = False
         mock_auth_client.refresh_access_token = AsyncMock()
 
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         call_count = 0
 
@@ -423,7 +432,7 @@ class TestFortumAPIClient:
 
     async def test_session_expiration_307_redirect(self, mock_hass, mock_auth_client):
         """Test session expiration detection via 307 redirect to TokenExpired."""
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         # Mock a response with 307 redirect to sign-out with TokenExpired
         mock_response = Mock()
@@ -440,7 +449,7 @@ class TestFortumAPIClient:
         self, mock_hass, mock_auth_client
     ):
         """Test 307 redirect to other location (not session expiration)."""
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         # Mock a response with 307 redirect to some other location
         mock_response = Mock()
@@ -455,7 +464,7 @@ class TestFortumAPIClient:
 
     async def test_handle_redirect_response_method(self, mock_hass, mock_auth_client):
         """Test the _handle_redirect_response method directly."""
-        client = FortumAPIClient(mock_hass, mock_auth_client)
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
 
         # Test session expiration redirect
         mock_response = Mock()
