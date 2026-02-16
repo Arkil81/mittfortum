@@ -38,7 +38,13 @@ class MittFortumEnergySensor(MittFortumEntity, SensorEntity):
 
     @property
     def native_value(self) -> float | None:
-        """Return the state of the sensor."""
+        """Return the cumulative energy consumption.
+
+        This returns the sum of all energy readings in the time range,
+        which represents the total energy consumed during that period.
+        For HA Energy dashboard integration, this should be the cumulative
+        consumption that increases over time.
+        """
         if self.coordinator.data is None:
             return None
         if not self.coordinator.data:  # Empty list
@@ -46,6 +52,8 @@ class MittFortumEnergySensor(MittFortumEntity, SensorEntity):
 
         data = self.coordinator.data
         assert isinstance(data, list)  # Type narrowing for pyrefly
+
+        # Sum all energy values to get cumulative consumption
         energy_values = [float(item.value) for item in data]
         return sum(energy_values, 0.0)
 
@@ -61,7 +69,11 @@ class MittFortumEnergySensor(MittFortumEntity, SensorEntity):
 
     @property
     def state_class(self) -> SensorStateClass:
-        """Return the state class."""
+        """Return the state class.
+
+        Using TOTAL for periodic consumption readings.
+        The value represents the total energy consumed in the time range.
+        """
         return SensorStateClass.TOTAL
 
     @property
@@ -72,8 +84,31 @@ class MittFortumEnergySensor(MittFortumEntity, SensorEntity):
 
         data = self.coordinator.data
         assert isinstance(data, list)  # Type narrowing for pyrefly
+
+        # Calculate time range
+        earliest_date = data[0].date_time if data else None
+        latest_date = data[-1].date_time if data else None
+
+        # Calculate resolution (time between consecutive readings)
+        resolution_minutes = None
+        if len(data) >= 2:
+            time_diff = (data[1].date_time - data[0].date_time).total_seconds() / 60
+            resolution_minutes = int(time_diff)
+
         return {
             "total_records": len(data),
-            "latest_date": data[-1].date_time.isoformat() if data else None,
+            "earliest_date": earliest_date.isoformat() if earliest_date else None,
+            "latest_date": latest_date.isoformat() if latest_date else None,
+            "time_range_hours": (
+                (latest_date - earliest_date).total_seconds() / 3600
+                if earliest_date and latest_date
+                else None
+            ),
+            "resolution_minutes": resolution_minutes,
             "unit": data[0].unit if data else None,
+            "average_consumption_per_hour": (
+                sum(float(item.value) for item in data) / len(data)
+                if data
+                else None
+            ),
         }

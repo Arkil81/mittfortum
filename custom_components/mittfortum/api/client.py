@@ -228,8 +228,91 @@ class FortumAPIClient:
         return "www.fortum.com"
 
     async def get_total_consumption(self) -> list[ConsumptionData]:
-        """Get total consumption data for the customer."""
-        return await self.get_consumption_data()
+        """Get total consumption data for the customer with best available resolution.
+
+        Fortum provides 15-minute resolution data from 2023-04-28 onwards.
+        For earlier dates, hourly data is available.
+
+        NOTE: 15-minute data has a delay and is typically only available for
+        completed periods (usually up to yesterday). We fetch data ending at
+        the start of today to avoid requesting future/incomplete data.
+
+        The API will try multiple resolution parameters in order:
+        1. "PER_15_MIN" (15-minute data as shown in session data)
+        2. "FIFTEEN_MINUTE" (alternative parameter name)
+        3. "HOUR" (fallback to hourly data)
+        """
+        from ..const import CONSUMPTION_DATA_DAYS
+
+        # Fetch data ending at start of today (to get completed periods only)
+        # 15-minute data typically has a delay and is only available for past periods
+        now = datetime.now()
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        # Fetch last N days of data, ending at start of today
+        from_date = today_start - timedelta(days=CONSUMPTION_DATA_DAYS)
+        to_date = today_start
+
+        _LOGGER.debug(
+            "Fetching consumption data from %s to %s (excluding incomplete current day)",
+            from_date.isoformat(),
+            to_date.isoformat()
+        )
+
+        # Try different resolution parameters for 15-minute data
+        resolution_attempts = ["PER_15_MIN", "FIFTEEN_MINUTE", "HOUR"]
+
+        last_exception = None
+        for resolution in resolution_attempts:
+            try:
+                _LOGGER.debug(
+                    "Attempting to fetch consumption data with resolution: %s",
+                    resolution
+                )
+                data = await self.get_consumption_data(
+                    from_date=from_date,
+                    to_date=to_date,
+                    resolution=resolution,
+                )
+
+                # Successfully got data - log and return
+                if data:
+                    _LOGGER.info(
+                        "Successfully fetched %d records with resolution: %s "
+                        "(from %s to %s)",
+                        len(data),
+                        resolution,
+                        data[0].date_time.isoformat() if data else None,
+                        data[-1].date_time.isoformat() if data else None,
+                    )
+                    return data
+                else:
+                    _LOGGER.debug(
+                        "Got empty data with resolution %s, trying next option",
+                        resolution
+                    )
+                    continue
+
+            except (APIError, InvalidResponseError) as exc:
+                _LOGGER.debug(
+                    "Failed to fetch data with resolution %s: %s",
+                    resolution,
+                    exc
+                )
+                last_exception = exc
+                continue
+
+        # If all attempts failed, raise the last exception
+        if last_exception:
+            _LOGGER.warning(
+                "All resolution attempts failed, last error: %s",
+                last_exception
+            )
+            raise last_exception
+
+        # Return empty list if no data
+        _LOGGER.warning("No data returned from any resolution attempt")
+        return []
 
     async def _get(self, url: str, retry_count: int = 0) -> Any:
         """Perform authenticated GET request with retry logic."""

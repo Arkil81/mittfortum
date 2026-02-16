@@ -38,6 +38,8 @@ def coordinator(mock_hass, mock_api_client):
     return MittFortumDataCoordinator(
         hass=mock_hass,
         api_client=mock_api_client,
+        statistics_manager=None,  # Don't test statistics in coordinator tests
+        locale="FI",
         update_interval=timedelta(minutes=15),
     )
 

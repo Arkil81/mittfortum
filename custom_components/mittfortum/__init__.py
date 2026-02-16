@@ -18,6 +18,7 @@ from .const import DOMAIN, PLATFORMS, CONF_LOCALE
 from .coordinator import MittFortumDataCoordinator
 from .device import MittFortumDevice
 from .exceptions import AuthenticationError, MittFortumError
+from .statistics import MittFortumStatisticsManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -50,8 +51,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         customer_id = await api_client.get_customer_id()
         device = MittFortumDevice(customer_id)
 
+        # Create statistics manager
+        statistics_manager = MittFortumStatisticsManager(hass, entry.entry_id)
+
         # Create data coordinator
-        coordinator = MittFortumDataCoordinator(hass, api_client)
+        coordinator = MittFortumDataCoordinator(
+            hass, api_client, statistics_manager, locale
+        )
 
         # Perform initial data fetch with retry for session propagation issues
         max_retries = 3

@@ -75,8 +75,30 @@ class MittFortumCostSensor(MittFortumEntity, SensorEntity):
         assert isinstance(data, list)  # Type narrowing for pyrefly
         cost_data = [item for item in data if item.cost is not None]
 
+        # Calculate time range
+        earliest_date = data[0].date_time if data else None
+        latest_date = data[-1].date_time if data else None
+
+        # Calculate resolution (time between consecutive readings)
+        resolution_minutes = None
+        if len(data) >= 2:
+            time_diff = (data[1].date_time - data[0].date_time).total_seconds() / 60
+            resolution_minutes = int(time_diff)
+
         return {
             "total_records_with_cost": len(cost_data),
             "currency": get_cost_unit(self._locale),
-            "latest_date": data[-1].date_time.isoformat() if data else None,
+            "earliest_date": earliest_date.isoformat() if earliest_date else None,
+            "latest_date": latest_date.isoformat() if latest_date else None,
+            "time_range_hours": (
+                (latest_date - earliest_date).total_seconds() / 3600
+                if earliest_date and latest_date
+                else None
+            ),
+            "resolution_minutes": resolution_minutes,
+            "average_cost_per_hour": (
+                sum(item.cost for item in cost_data) / len(cost_data)
+                if cost_data
+                else None
+            ),
         }

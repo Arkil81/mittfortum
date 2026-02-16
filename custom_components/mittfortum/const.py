@@ -50,8 +50,12 @@ def get_time_series_base_url(locale: str) -> str:
 
 # API request configuration
 TRPC_BATCH_PARAM = "1"
-DEFAULT_RESOLUTION = "MONTH"
-AVAILABLE_RESOLUTIONS = ["HOUR", "DAY", "MONTH", "YEAR"]
+DEFAULT_RESOLUTION = "HOUR"  # Default to hourly, will try 15-min if available
+AVAILABLE_RESOLUTIONS = ["PER_15_MIN", "HOUR", "DAY", "MONTH", "YEAR"]
+# Fortum uses "PER_15_MIN" for 15-minute data, not "QUARTER_HOUR"
+
+# Data fetch configuration for consumption data
+CONSUMPTION_DATA_DAYS = 2  # Fetch last 2 days of data
 
 # Energy data types
 ENERGY_DATA_TYPE = "ENERGY"
