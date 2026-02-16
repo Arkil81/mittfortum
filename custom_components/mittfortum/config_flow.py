@@ -22,7 +22,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_USERNAME): str,
         vol.Required(CONF_PASSWORD): str,
-        vol.Required(CONF_LOCALE): vol.In(["SV", "FI"])
+        vol.Required(CONF_LOCALE): vol.In(["SV", "FI", "NO"])
     }
 )
 

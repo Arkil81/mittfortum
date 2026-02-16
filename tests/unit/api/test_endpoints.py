@@ -20,6 +20,13 @@ class TestAPIEndpoints:
         assert "authIndexValue=fib2clogin" in result
         assert "authIndexType=service" in result
 
+    def test_get_auth_init_url_norwegian(self):
+        """Test Norwegian auth init URL."""
+        result = APIEndpoints.get_auth_init_url("NO")
+        assert "locale=no" in result
+        assert "authIndexValue=nob2clogin" in result
+        assert "authIndexType=service" in result
+
     def test_get_session_username_url_swedish(self):
         """Test Swedish session username URL."""
         result = APIEndpoints.get_session_username_url("SV")
@@ -30,6 +37,11 @@ class TestAPIEndpoints:
         result = APIEndpoints.get_session_username_url("FI")
         assert result == "https://www.fortum.com/fi/sahkoa/api/get-session-username"
 
+    def test_get_session_username_url_norwegian(self):
+        """Test Norwegian session username URL."""
+        result = APIEndpoints.get_session_username_url("NO")
+        assert result == "https://www.fortum.com/no/strom/api/get-session-username"
+
     def test_get_session_url_swedish(self):
         """Test Swedish session URL."""
         result = APIEndpoints.get_session_url("SV")
@@ -39,6 +51,11 @@ class TestAPIEndpoints:
         """Test Finnish session URL."""
         result = APIEndpoints.get_session_url("FI")
         assert result == "https://www.fortum.com/fi/sahkoa/api/auth/session"
+
+    def test_get_session_url_norwegian(self):
+        """Test Norwegian session URL."""
+        result = APIEndpoints.get_session_url("NO")
+        assert result == "https://www.fortum.com/no/strom/api/auth/session"
 
     def test_get_time_series_url_swedish(self):
         """Test Swedish time series URL."""
@@ -68,8 +85,25 @@ class TestAPIEndpoints:
             to_date=datetime(2024, 1, 31),
             resolution="MONTH",
         )
-        
+
         assert "https://www.fortum.com/fi/sahkoa/api/trpc" in result
+        assert "loggedIn.timeSeries.listTimeSeries" in result
+        assert "batch=1" in result
+        assert "input=" in result
+
+    def test_get_time_series_url_norwegian(self):
+        """Test Norwegian time series URL."""
+        from datetime import datetime
+
+        result = APIEndpoints.get_time_series_url(
+            locale="NO",
+            metering_point_nos=["555666777"],
+            from_date=datetime(2024, 1, 1),
+            to_date=datetime(2024, 1, 31),
+            resolution="MONTH",
+        )
+
+        assert "https://www.fortum.com/no/strom/api/trpc" in result
         assert "loggedIn.timeSeries.listTimeSeries" in result
         assert "batch=1" in result
         assert "input=" in result

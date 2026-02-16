@@ -28,6 +28,14 @@ class TestFortumAPIClient:
         assert client._auth_client == mock_auth_client
         assert client._locale == "FI"
 
+    def test_init_with_norwegian_locale(self, mock_hass, mock_auth_client):
+        """Test initialization with Norwegian locale."""
+        client = FortumAPIClient(mock_hass, mock_auth_client, "NO")
+
+        assert client._hass == mock_hass
+        assert client._auth_client == mock_auth_client
+        assert client._locale == "NO"
+
     async def test_get_customer_id_success(self, mock_hass, mock_auth_client):
         """Test successful customer ID extraction."""
         mock_auth_client.id_token = "test_token"
