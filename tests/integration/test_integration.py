@@ -33,7 +33,6 @@ def mock_config_entry():
         unique_id="test_user",
         discovery_keys=MappingProxyType({}),
         options={},
-        subentries_data={},
     )
 
 

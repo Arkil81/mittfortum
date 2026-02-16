@@ -40,6 +40,7 @@ def mock_auth_client():
     client.refresh_token = "test_refresh_token"
     client.id_token = "test_id_token"
     client.is_token_expired.return_value = False
+    client.needs_renewal.return_value = False
     return client
 
 
