@@ -5,7 +5,7 @@
         "data": {
           "username": "Fortum username",
           "password": "Fortum password",
-          "locale": "Fortum locale: SV or FI"
+          "locale": "Fortum locale: SV, FI or NO"
         }
       }
     },

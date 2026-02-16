@@ -128,6 +128,64 @@ class TestInit:
                 "FI",
             )
 
+    async def test_async_setup_entry_success_norwegian(self, mock_hass):
+        """Test successful setup with Norwegian locale."""
+        entry = AsyncMock(spec=ConfigEntry)
+        entry.data = {
+            CONF_USERNAME: "test@example.no",
+            CONF_PASSWORD: "test_password",
+            CONF_LOCALE: "NO",
+        }
+        entry.entry_id = "test_entry_id_no"
+
+        mock_hass.data = {DOMAIN: {}}
+
+        with (
+            patch("custom_components.mittfortum.OAuth2AuthClient") as mock_auth,
+            patch("custom_components.mittfortum.FortumAPIClient") as mock_api,
+            patch("custom_components.mittfortum.MittFortumDevice") as mock_device,
+            patch(
+                "custom_components.mittfortum.MittFortumDataCoordinator"
+            ) as mock_coordinator,
+        ):
+            mock_auth_instance = AsyncMock()
+            mock_auth.return_value = mock_auth_instance
+
+            mock_api_instance = AsyncMock()
+            mock_api_instance.get_customer_id.return_value = "customer_789"
+            mock_api.return_value = mock_api_instance
+
+            mock_device_instance = AsyncMock()
+            mock_device.return_value = mock_device_instance
+
+            mock_coordinator_instance = AsyncMock()
+            mock_coordinator.return_value = mock_coordinator_instance
+
+            mock_hass.config_entries.async_forward_entry_setups = AsyncMock(
+                return_value=True
+            )
+
+            result = await async_setup_entry(mock_hass, entry)
+
+            assert result is True
+            assert DOMAIN in mock_hass.data
+            assert entry.entry_id in mock_hass.data[DOMAIN]
+
+            # Verify Norwegian locale was passed to auth client
+            mock_auth.assert_called_once_with(
+                hass=mock_hass,
+                username="test@example.no",
+                password="test_password",
+                locale="NO",
+            )
+
+            # Verify Norwegian locale was passed to API client
+            mock_api.assert_called_once_with(
+                mock_hass, 
+                mock_auth_instance,
+                "NO",
+            )
+
     async def test_async_setup_entry_auth_failure(self, mock_hass):
         """Test setup with authentication failure."""
         entry = AsyncMock(spec=ConfigEntry)

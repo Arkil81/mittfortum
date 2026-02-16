@@ -88,6 +88,29 @@ class TestMittFortumConfigFlow:
             mock_set_id.assert_called_once_with("test_user_fi")
 
     @patch("custom_components.mittfortum.config_flow.validate_input")
+    async def test_form_step_user_valid_credentials_norwegian(self, mock_validate, config_flow):
+        """Test user step with valid credentials and Norwegian locale."""
+        mock_validate.return_value = {"title": "MittFortum (test_user_no)"}
+
+        user_input = {
+            CONF_USERNAME: "test_user_no",
+            CONF_PASSWORD: "test_password",
+            CONF_LOCALE: "NO",
+        }
+
+        with (
+            patch.object(config_flow, "async_set_unique_id") as mock_set_id,
+            patch.object(config_flow, "_abort_if_unique_id_configured"),
+        ):
+            result = await config_flow.async_step_user(user_input)
+
+            assert result["type"] == FlowResultType.CREATE_ENTRY
+            assert result["title"] == "MittFortum (test_user_no)"
+            assert result["data"] == user_input
+            assert result["data"][CONF_LOCALE] == "NO"
+            mock_set_id.assert_called_once_with("test_user_no")
+
+    @patch("custom_components.mittfortum.config_flow.validate_input")
     async def test_form_step_user_invalid_credentials(self, mock_validate, config_flow):
         """Test user step with invalid credentials."""
         mock_validate.side_effect = InvalidAuth()

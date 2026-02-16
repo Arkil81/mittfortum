@@ -27,6 +27,11 @@ class TestLocaleSpecificFunctions:
         result = get_fortum_base_url("FI")
         assert result == "https://www.fortum.com/fi/sahkoa"
 
+    def test_get_fortum_base_url_norwegian(self):
+        """Test Norwegian Fortum base URL."""
+        result = get_fortum_base_url("NO")
+        assert result == "https://www.fortum.com/no/strom"
+
     def test_get_fortum_base_url_invalid(self):
         """Test invalid locale raises ValueError."""
         with pytest.raises(ValueError, match="Unsupported locale: DE"):
@@ -42,6 +47,11 @@ class TestLocaleSpecificFunctions:
         result = get_api_base_url("FI")
         assert result == "https://www.fortum.com/fi/sahkoa/api"
 
+    def test_get_api_base_url_norwegian(self):
+        """Test Norwegian API base URL."""
+        result = get_api_base_url("NO")
+        assert result == "https://www.fortum.com/no/strom/api"
+
     def test_get_trpc_base_url_swedish(self):
         """Test Swedish tRPC base URL."""
         result = get_trpc_base_url("SV")
@@ -51,6 +61,11 @@ class TestLocaleSpecificFunctions:
         """Test Finnish tRPC base URL."""
         result = get_trpc_base_url("FI")
         assert result == "https://www.fortum.com/fi/sahkoa/api/trpc"
+
+    def test_get_trpc_base_url_norwegian(self):
+        """Test Norwegian tRPC base URL."""
+        result = get_trpc_base_url("NO")
+        assert result == "https://www.fortum.com/no/strom/api/trpc"
 
     def test_get_auth_index_value_swedish(self):
         """Test Swedish auth index value."""
@@ -62,10 +77,15 @@ class TestLocaleSpecificFunctions:
         result = get_auth_index_value("FI")
         assert result == "FIB2CLogin"
 
+    def test_get_auth_index_value_norwegian(self):
+        """Test Norwegian auth index value."""
+        result = get_auth_index_value("NO")
+        assert result == "NOB2CLogin"
+
     def test_get_auth_index_value_invalid(self):
         """Test invalid locale raises ValueError."""
-        with pytest.raises(ValueError, match="Unsupported locale: NO"):
-            get_auth_index_value("NO")
+        with pytest.raises(ValueError, match="Unsupported locale: DK"):
+            get_auth_index_value("DK")
 
     def test_get_session_url_swedish(self):
         """Test Swedish session URL."""
@@ -76,6 +96,11 @@ class TestLocaleSpecificFunctions:
         """Test Finnish session URL."""
         result = get_session_url("FI")
         assert result == "https://www.fortum.com/fi/sahkoa/api/auth/session"
+
+    def test_get_session_url_norwegian(self):
+        """Test Norwegian session URL."""
+        result = get_session_url("NO")
+        assert result == "https://www.fortum.com/no/strom/api/auth/session"
 
     def test_get_time_series_base_url_swedish(self):
         """Test Swedish time series base URL."""
@@ -93,6 +118,14 @@ class TestLocaleSpecificFunctions:
             == "https://www.fortum.com/fi/sahkoa/api/trpc/loggedIn.timeSeries.listTimeSeries"
         )
 
+    def test_get_time_series_base_url_norwegian(self):
+        """Test Norwegian time series base URL."""
+        result = get_time_series_base_url("NO")
+        assert (
+            result
+            == "https://www.fortum.com/no/strom/api/trpc/loggedIn.timeSeries.listTimeSeries"
+        )
+
     def test_get_oauth_redirect_uri_swedish(self):
         """Test Swedish OAuth redirect URI."""
         result = get_oauth_redirect_uri("SV")
@@ -103,6 +136,11 @@ class TestLocaleSpecificFunctions:
         result = get_oauth_redirect_uri("FI")
         assert result == "https://www.fortum.com/fi/sahkoa/api/auth/callback/ciamprod"
 
+    def test_get_oauth_redirect_uri_norwegian(self):
+        """Test Norwegian OAuth redirect URI."""
+        result = get_oauth_redirect_uri("NO")
+        assert result == "https://www.fortum.com/no/strom/api/auth/callback/ciamprod"
+
     def test_get_cost_unit_swedish(self):
         """Test Swedish cost unit (SEK)."""
         result = get_cost_unit("SV")
@@ -112,6 +150,11 @@ class TestLocaleSpecificFunctions:
         """Test Finnish cost unit (EUR)."""
         result = get_cost_unit("FI")
         assert result == "EUR"
+
+    def test_get_cost_unit_norwegian(self):
+        """Test Norwegian cost unit (NOK)."""
+        result = get_cost_unit("NO")
+        assert result == "NOK"
 
     def test_get_cost_unit_invalid(self):
         """Test invalid locale raises ValueError."""

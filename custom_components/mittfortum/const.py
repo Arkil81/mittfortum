@@ -20,6 +20,8 @@ def get_fortum_base_url(locale: str) -> str:
         return "https://www.fortum.com/se/el"
     elif locale == "FI":
         return "https://www.fortum.com/fi/sahkoa"
+    elif locale == "NO":
+        return "https://www.fortum.com/no/strom"
     else:
         raise ValueError(f"Unsupported locale: {locale}")
 def get_api_base_url(locale: str) -> str:
@@ -33,6 +35,8 @@ def get_auth_index_value(locale: str) -> str:
         return "SeB2COGWLogin"
     elif locale == "FI":
         return "FIB2CLogin"
+    elif locale == "NO":
+        return "NOB2CLogin"
     else:
         raise ValueError(f"Unsupported locale: {locale}")
 
@@ -94,5 +98,7 @@ def get_cost_unit(locale: str) -> str:
         return "SEK"
     elif locale == "FI":
         return "EUR"
+    elif locale == "NO":
+        return "NOK"
     else:
         raise ValueError(f"Unsupported locale: {locale}")
