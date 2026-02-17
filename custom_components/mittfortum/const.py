@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import time as dt_time
 from datetime import timedelta
 
 from homeassistant.const import Platform
@@ -14,6 +15,7 @@ PLATFORMS: list[Platform] = [Platform.SENSOR]
 
 CONF_LOCALE = "locale"
 
+
 # API endpoints
 def get_fortum_base_url(locale: str) -> str:
     if locale == "SV":
@@ -24,11 +26,18 @@ def get_fortum_base_url(locale: str) -> str:
         return "https://www.fortum.com/no/strom"
     else:
         raise ValueError(f"Unsupported locale: {locale}")
+
+
 def get_api_base_url(locale: str) -> str:
     return f"{get_fortum_base_url(locale)}/api"
+
+
 def get_trpc_base_url(locale: str) -> str:
     return f"{get_api_base_url(locale)}/trpc"
+
+
 OAUTH_BASE_URL = "https://sso.fortum.com"
+
 
 def get_auth_index_value(locale: str) -> str:
     if locale == "SV":
@@ -40,13 +49,16 @@ def get_auth_index_value(locale: str) -> str:
     else:
         raise ValueError(f"Unsupported locale: {locale}")
 
+
 # Session endpoint (for customer details and metering points)
 def get_session_url(locale: str) -> str:
     return f"{get_api_base_url(locale)}/auth/session"
 
+
 # tRPC endpoints (only for time series data)
 def get_time_series_base_url(locale: str) -> str:
     return f"{get_trpc_base_url(locale)}/loggedIn.timeSeries.listTimeSeries"
+
 
 # API request configuration
 TRPC_BATCH_PARAM = "1"
@@ -71,8 +83,12 @@ COST_TYPES = {
 
 # OAuth2 configuration
 OAUTH_CLIENT_ID = "globalwebprod"
+
+
 def get_oauth_redirect_uri(locale: str) -> str:
     return f"{get_api_base_url(locale)}/auth/callback/ciamprod"
+
+
 OAUTH_SECRET_KEY = "shared_secret"
 OAUTH_SCOPE = ["openid", "profile", "crmdata"]
 
@@ -85,6 +101,13 @@ OAUTH_AUTH_URL = f"{OAUTH_BASE_URL}/am/json/realms/root/realms/alpha/authenticat
 DEFAULT_UPDATE_INTERVAL = timedelta(minutes=30)
 TOKEN_REFRESH_INTERVAL = timedelta(minutes=5)
 
+# Smart polling configuration for daily data publication
+# Fortum publishes previous day's complete data around 15:00 the next day
+DATA_PUBLICATION_TIME = dt_time(15, 0)  # 15:00 (3:00 PM)
+DATA_RETRY_INTERVAL = timedelta(
+    minutes=30
+)  # Retry every 30 minutes if data not available
+
 # Device information
 MANUFACTURER = "Fortum"
 MODEL = "MittFortum"
@@ -96,6 +119,7 @@ COST_SENSOR_KEY = "total_cost"
 # Data storage keys
 CONF_CUSTOMER_ID = "customer_id"
 CONF_METERING_POINTS = "metering_points"
+
 
 def get_cost_unit(locale: str) -> str:
     if locale == "SV":

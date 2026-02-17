@@ -35,7 +35,10 @@ class TestOAuth2AuthClient:
         )
 
         assert client._locale == "FI"
-        assert client._redirect_uri == "https://www.fortum.com/fi/sahkoa/api/auth/callback/ciamprod"
+        assert (
+            client._redirect_uri
+            == "https://www.fortum.com/fi/sahkoa/api/auth/callback/ciamprod"
+        )
 
     def test_init_with_swedish_locale(self, mock_hass):
         """Test initialization with Swedish locale."""
@@ -47,7 +50,10 @@ class TestOAuth2AuthClient:
         )
 
         assert client._locale == "SV"
-        assert client._redirect_uri == "https://www.fortum.com/se/el/api/auth/callback/ciamprod"
+        assert (
+            client._redirect_uri
+            == "https://www.fortum.com/se/el/api/auth/callback/ciamprod"
+        )
 
     def test_init_with_norwegian_locale(self, mock_hass):
         """Test initialization with Norwegian locale."""
@@ -59,7 +65,10 @@ class TestOAuth2AuthClient:
         )
 
         assert client._locale == "NO"
-        assert client._redirect_uri == "https://www.fortum.com/no/strom/api/auth/callback/ciamprod"
+        assert (
+            client._redirect_uri
+            == "https://www.fortum.com/no/strom/api/auth/callback/ciamprod"
+        )
 
     def test_is_token_expired_no_expiry(self, mock_hass):
         """Test token expiry check with no expiry set."""

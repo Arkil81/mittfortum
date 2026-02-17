@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
-from typing import TYPE_CHECKING
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, cast
 
 from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.statistics import (
+    StatisticData,
+    StatisticMetaData,
     async_add_external_statistics,
     get_last_statistics,
 )
@@ -39,7 +41,7 @@ class MittFortumStatisticsManager:
         locale: str,
     ) -> None:
         """Import consumption data as statistics.
-        
+
         This allows Home Assistant's Energy Dashboard to properly track
         consumption over time with 15-minute granularity.
         """
@@ -56,7 +58,7 @@ class MittFortumStatisticsManager:
             True,
             {"sum"},
         )
-        
+
         last_cost_stats = await get_instance(self.hass).async_add_executor_job(
             get_last_statistics,
             self.hass,
@@ -68,22 +70,18 @@ class MittFortumStatisticsManager:
 
         # Determine the last imported timestamp
         last_energy_time = None
-        last_energy_sum = 0.0
+        last_energy_sum: float = 0.0
         if self.energy_statistic_id in last_energy_stats:
             last_stat = last_energy_stats[self.energy_statistic_id][0]
-            last_energy_time = datetime.fromtimestamp(
-                last_stat["start"], tz=timezone.utc
-            )
-            last_energy_sum = last_stat.get("sum", 0.0)
+            last_energy_time = datetime.fromtimestamp(last_stat["start"], tz=UTC)
+            last_energy_sum = float(last_stat.get("sum") or 0.0)
 
         last_cost_time = None
-        last_cost_sum = 0.0
+        last_cost_sum: float = 0.0
         if self.cost_statistic_id in last_cost_stats:
             last_stat = last_cost_stats[self.cost_statistic_id][0]
-            last_cost_time = datetime.fromtimestamp(
-                last_stat["start"], tz=timezone.utc
-            )
-            last_cost_sum = last_stat.get("sum", 0.0)
+            last_cost_time = datetime.fromtimestamp(last_stat["start"], tz=UTC)
+            last_cost_sum = float(last_stat.get("sum") or 0.0)
 
         _LOGGER.debug(
             "Last energy statistics: time=%s, sum=%.2f kWh",
@@ -100,13 +98,13 @@ class MittFortumStatisticsManager:
         new_energy_data = [
             item
             for item in consumption_data
-            if last_energy_time is None or item.date_time > last_energy_time
+            if last_energy_time is None or item.date_time >= last_energy_time
         ]
-        
+
         new_cost_data = [
             item
             for item in consumption_data
-            if (last_cost_time is None or item.date_time > last_cost_time)
+            if (last_cost_time is None or item.date_time >= last_cost_time)
             and item.cost is not None
         ]
 
@@ -122,16 +120,11 @@ class MittFortumStatisticsManager:
 
         # Import energy statistics
         if new_energy_data:
-            await self._import_energy_statistics(
-                new_energy_data, last_energy_sum
-            )
+            await self._import_energy_statistics(new_energy_data, last_energy_sum)
 
         # Import cost statistics
         if new_cost_data:
-            await self._import_cost_statistics(
-                new_cost_data, last_cost_sum, locale
-            )
-
+            await self._import_cost_statistics(new_cost_data, last_cost_sum, locale)
 
     async def _import_energy_statistics(
         self,
@@ -144,11 +137,27 @@ class MittFortumStatisticsManager:
         # Aggregate 15-minute data into hourly buckets
         # HA statistics require timestamps at the top of the hour
         hourly_data: dict[datetime, float] = defaultdict(float)
+        hourly_counts: dict[datetime, int] = defaultdict(int)
 
         for item in consumption_data:
             # Round down to the start of the hour
             hour_start = item.date_time.replace(minute=0, second=0, microsecond=0)
             hourly_data[hour_start] += item.value
+            hourly_counts[hour_start] += 1
+
+        # Validate that we have complete hours (4 records for 15-min data)
+        # Only import hours with complete data to prevent partial sums
+        incomplete_hours = [hour for hour, count in hourly_counts.items() if count < 4]
+        if incomplete_hours:
+            _LOGGER.warning(
+                "Found %d incomplete hours with less than 4 15-minute records. "
+                "These will be skipped: %s",
+                len(incomplete_hours),
+                [h.isoformat() for h in sorted(incomplete_hours)],
+            )
+            # Remove incomplete hours from import
+            for hour in incomplete_hours:
+                del hourly_data[hour]
 
         # Build statistics data with cumulative sums
         statistics = []
@@ -160,39 +169,40 @@ class MittFortumStatisticsManager:
             cumulative_sum += hourly_value
 
             # Convert datetime to UTC timestamp
-            start_time = hour_start.replace(tzinfo=timezone.utc)
+            start_time = hour_start.replace(tzinfo=UTC)
 
-            statistics.append({
-                "start": start_time,
-                "state": hourly_value,  # Energy consumed in this hour
-                "sum": cumulative_sum,  # Cumulative energy
-            })
+            statistics.append(
+                {
+                    "start": start_time,
+                    "state": hourly_value,  # Energy consumed in this hour
+                    "sum": cumulative_sum,  # Cumulative energy
+                }
+            )
 
         # Define metadata for the statistics
-        metadata = {
+        metadata: StatisticMetaData = {
             "source": "mittfortum",
             "name": "Energy Consumption",
             "statistic_id": self.energy_statistic_id,
             "unit_of_measurement": "kWh",
             "has_mean": False,
             "has_sum": True,
-            "unit_class": "energy",
         }
 
         # Import into HA statistics database
         async_add_external_statistics(
             self.hass,
             metadata,
-            statistics,
+            cast(list[StatisticData], statistics),
         )
 
         _LOGGER.info(
-            "Imported %d hourly energy statistics (aggregated from %d 15-min records, cumulative: %.2f kWh)",
+            "Imported %d hourly energy statistics "
+            "(aggregated from %d 15-min records, cumulative: %.2f kWh)",
             len(statistics),
             len(consumption_data),
             cumulative_sum,
         )
-
 
     async def _import_cost_statistics(
         self,
@@ -201,8 +211,9 @@ class MittFortumStatisticsManager:
         locale: str,
     ) -> None:
         """Import cost statistics (aggregated to hourly)."""
-        from .const import get_cost_unit
         from collections import defaultdict
+
+        from .const import get_cost_unit
 
         # Aggregate 15-minute data into hourly buckets
         hourly_data: dict[datetime, float] = defaultdict(float)
@@ -227,16 +238,18 @@ class MittFortumStatisticsManager:
             cumulative_sum += hourly_data[hour_start]
 
             # Convert datetime to UTC timestamp
-            start_time = hour_start.replace(tzinfo=timezone.utc)
+            start_time = hour_start.replace(tzinfo=UTC)
 
-            statistics.append({
-                "start": start_time,
-                "state": hourly_data[hour_start],  # Cost in this hour
-                "sum": cumulative_sum,  # Cumulative cost
-            })
+            statistics.append(
+                {
+                    "start": start_time,
+                    "state": hourly_data[hour_start],  # Cost in this hour
+                    "sum": cumulative_sum,  # Cumulative cost
+                }
+            )
 
         # Define metadata for the statistics
-        metadata = {
+        metadata: StatisticMetaData = {
             "source": "mittfortum",
             "name": "Total Cost",
             "statistic_id": self.cost_statistic_id,
@@ -249,11 +262,12 @@ class MittFortumStatisticsManager:
         async_add_external_statistics(
             self.hass,
             metadata,
-            statistics,
+            cast(list[StatisticData], statistics),
         )
 
         _LOGGER.info(
-            "Imported %d hourly cost statistics (aggregated from %d 15-min records, cumulative: %.2f %s)",
+            "Imported %d hourly cost statistics "
+            "(aggregated from %d 15-min records, cumulative: %.2f %s)",
             len(statistics),
             len(consumption_data),
             cumulative_sum,

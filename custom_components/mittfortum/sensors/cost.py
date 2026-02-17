@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
 from ..entity import MittFortumEntity
 
+
 class MittFortumCostSensor(MittFortumEntity, SensorEntity):
     """Cost sensor for MittFortum."""
 
@@ -64,6 +65,15 @@ class MittFortumCostSensor(MittFortumEntity, SensorEntity):
     def state_class(self) -> SensorStateClass:
         """Return the state class."""
         return SensorStateClass.TOTAL
+
+    @property
+    def statistic_id(self) -> str:
+        """Return the statistic_id for this sensor.
+
+        This links the sensor to the external statistics we import,
+        making it visible in Developer Tools → Statistics.
+        """
+        return "mittfortum:energy_cost"
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:

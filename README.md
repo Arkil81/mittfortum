@@ -9,6 +9,7 @@ A Home Assistant custom integration for accessing energy consumption data from F
 - **Secure OAuth2 Authentication**: Uses Fortum's official authentication system
 - **Automatic Token Refresh**: Handles token expiration automatically
 - **Device Integration**: Creates a device in Home Assistant for easy management
+- **Locale Support**: Supports SV, FI, NO locales, using SEK, EUR and NOK respectively.
 
 ## Installation
 
@@ -37,14 +38,17 @@ A Home Assistant custom integration for accessing energy consumption data from F
 2. Click "Add Integration"
 3. Search for "MittFortum"
 4. Enter your MittFortum username and password
-5. Complete the setup
+5. Select your locale
+6. Complete the setup
 
 ## Entities
 
 The integration creates the following entities:
 
 - **Energy Consumption Sensor**: Total energy consumption in kWh
-- **Total Cost Sensor**: Total energy cost in SEK or EUR
+- **Total Cost Sensor**: Total energy cost in SEK,EUR or NOK
+- **Energy Consumption Statistics**: Time-series energy consumption in kWh
+- **Energy Cost Statistics**: Time-series cost in SEK,EUR or NOK
 
 ## Architecture
 

@@ -15,6 +15,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [3.2.0] - 2026-02-17
+
+### Added
+- Major statistics feature to:
+ - Increase data gathering resolution to support 15-minute metering.
+ - Create two new statistics entities to properly show hourly consumption in Energy dashboard.
+ - Pull previous days data when it becomes available (every day after 15:00, retries every 30min)
+
+## [3.1.1] - 2026-02-16
+
+### Added
+- Add NO localization and tests to fix issue #13
+
+## [3.1.0] - 2026-02-16
+
+### Added
+- Merge locale feature from https://github.com/Hegyusz/omafortum to support FI locale
+- Added tests for locales
+
+## [3.0.1] - 2026-02-15
+
+### Fixed
+- Incorrect ID token after Fortum API changes
+
 ## [3.0.0] - 2025-05-29
 
 ### Added

@@ -77,6 +77,15 @@ class MittFortumEnergySensor(MittFortumEntity, SensorEntity):
         return SensorStateClass.TOTAL
 
     @property
+    def statistic_id(self) -> str:
+        """Return the statistic_id for this sensor.
+
+        This links the sensor to the external statistics we import,
+        making it visible in Developer Tools → Statistics.
+        """
+        return "mittfortum:energy_consumption"
+
+    @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
         """Return additional state attributes."""
         if not self.coordinator.data:
@@ -107,8 +116,6 @@ class MittFortumEnergySensor(MittFortumEntity, SensorEntity):
             "resolution_minutes": resolution_minutes,
             "unit": data[0].unit if data else None,
             "average_consumption_per_hour": (
-                sum(float(item.value) for item in data) / len(data)
-                if data
-                else None
+                sum(float(item.value) for item in data) / len(data) if data else None
             ),
         }

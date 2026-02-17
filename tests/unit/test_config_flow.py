@@ -65,7 +65,9 @@ class TestMittFortumConfigFlow:
             mock_set_id.assert_called_once_with("test_user")
 
     @patch("custom_components.mittfortum.config_flow.validate_input")
-    async def test_form_step_user_valid_credentials_finnish(self, mock_validate, config_flow):
+    async def test_form_step_user_valid_credentials_finnish(
+        self, mock_validate, config_flow
+    ):
         """Test user step with valid credentials and Finnish locale."""
         mock_validate.return_value = {"title": "MittFortum (test_user_fi)"}
 
@@ -88,7 +90,9 @@ class TestMittFortumConfigFlow:
             mock_set_id.assert_called_once_with("test_user_fi")
 
     @patch("custom_components.mittfortum.config_flow.validate_input")
-    async def test_form_step_user_valid_credentials_norwegian(self, mock_validate, config_flow):
+    async def test_form_step_user_valid_credentials_norwegian(
+        self, mock_validate, config_flow
+    ):
         """Test user step with valid credentials and Norwegian locale."""
         mock_validate.return_value = {"title": "MittFortum (test_user_no)"}
 
@@ -197,7 +201,7 @@ class TestValidateInput:
 
         # Verify locale was passed to API client
         mock_api_client_class.assert_called_once_with(
-            mock_hass, 
+            mock_hass,
             mock_auth_client,
             "SV",
         )
@@ -234,7 +238,7 @@ class TestValidateInput:
 
         # Verify Finnish locale was passed to API client
         mock_api_client_class.assert_called_once_with(
-            mock_hass, 
+            mock_hass,
             mock_auth_client,
             "FI",
         )

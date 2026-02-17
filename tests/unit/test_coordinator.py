@@ -1,8 +1,9 @@
 """Test coordinator module."""
 
 from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, Mock, patch
 
+import homeassistant.util.dt as dt_util
 import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import UpdateFailed
@@ -30,6 +31,34 @@ def mock_api_client():
     # The coordinator calls get_total_consumption, not get_consumption_data
     client.get_total_consumption.return_value = test_data
     return client
+
+
+@pytest.fixture
+def yesterday_data():
+    """Create sample data from yesterday."""
+    now = dt_util.now()
+    yesterday = (now - timedelta(days=1)).replace(
+        hour=21, minute=0, second=0, microsecond=0
+    )
+    return [
+        ConsumptionData(
+            value=0.42, unit="kWh", date_time=yesterday.replace(minute=m), cost=0.10
+        )
+        for m in [0, 15, 30, 45]
+    ]
+
+
+@pytest.fixture
+def today_data():
+    """Create sample data from today (incomplete)."""
+    now = dt_util.now()
+    today = now.replace(hour=10, minute=0, second=0, microsecond=0)
+    return [
+        ConsumptionData(
+            value=0.42, unit="kWh", date_time=today.replace(minute=m), cost=0.10
+        )
+        for m in [0, 15, 30]  # Only 3 records (incomplete)
+    ]
 
 
 @pytest.fixture
@@ -110,3 +139,219 @@ class TestMittFortumDataCoordinator:
 
         data = await coordinator._async_update_data()
         assert data == []
+
+
+class TestSmartDailyPolling:
+    """Test smart daily polling logic (only fetch after 15:00)."""
+
+    @patch("custom_components.mittfortum.coordinator.dt_util.now")
+    async def test_should_not_fetch_before_15_00(
+        self, mock_now, coordinator, mock_api_client
+    ):
+        """Test that data is not fetched before 15:00."""
+        # Set time to 14:30 (before 15:00 publication time)
+        test_time = datetime(2024, 1, 16, 14, 30, 0)
+        mock_now.return_value = test_time.replace(tzinfo=dt_util.DEFAULT_TIME_ZONE)
+
+        await coordinator._async_update_data()
+
+        # Should return empty or existing data without calling API
+        mock_api_client.get_total_consumption.assert_not_called()
+
+    @patch("custom_components.mittfortum.coordinator.dt_util.now")
+    async def test_should_fetch_after_15_00(
+        self, mock_now, coordinator, mock_api_client
+    ):
+        """Test that data IS fetched after 15:00."""
+        # Set time to 15:30 (after 15:00 publication time)
+        test_time = datetime(2024, 1, 16, 15, 30, 0)
+        mock_now.return_value = test_time.replace(tzinfo=dt_util.DEFAULT_TIME_ZONE)
+
+        # Create yesterday's data
+        yesterday = test_time - timedelta(days=1)
+        yesterday_data = [
+            ConsumptionData(
+                value=0.42,
+                unit="kWh",
+                date_time=yesterday.replace(
+                    hour=21, minute=m, tzinfo=dt_util.DEFAULT_TIME_ZONE
+                ),
+                cost=0.10,
+            )
+            for m in [0, 15, 30, 45]
+        ]
+
+        mock_api_client.get_total_consumption.return_value = yesterday_data
+
+        await coordinator._async_update_data()
+
+        # Should call API after 15:00
+        mock_api_client.get_total_consumption.assert_called_once()
+
+    @patch("custom_components.mittfortum.coordinator.dt_util.now")
+    async def test_should_fetch_next_day_after_15_00(
+        self, mock_now, coordinator, mock_api_client
+    ):
+        """Test that data IS fetched again the next day after 15:00."""
+        test_time = datetime(2024, 1, 16, 15, 30, 0)
+
+        # Create day 1 yesterday data
+        yesterday = test_time - timedelta(days=1)
+        day1_yesterday_data = [
+            ConsumptionData(
+                value=0.42,
+                unit="kWh",
+                date_time=yesterday.replace(
+                    hour=21, minute=m, tzinfo=dt_util.DEFAULT_TIME_ZONE
+                ),
+                cost=0.10,
+            )
+            for m in [0, 15, 30, 45]
+        ]
+
+        # First fetch on day 1 at 15:30
+        mock_now.return_value = test_time.replace(tzinfo=dt_util.DEFAULT_TIME_ZONE)
+        mock_api_client.get_total_consumption.return_value = day1_yesterday_data
+
+        await coordinator._async_update_data()
+        assert mock_api_client.get_total_consumption.call_count == 1
+
+        # Next day at 15:30
+        test_time = datetime(2024, 1, 17, 15, 30, 0)
+        mock_now.return_value = test_time.replace(tzinfo=dt_util.DEFAULT_TIME_ZONE)
+
+        # Create day 2 yesterday data
+        yesterday = test_time - timedelta(days=1)
+        day2_yesterday_data = [
+            ConsumptionData(
+                value=0.42,
+                unit="kWh",
+                date_time=yesterday.replace(
+                    hour=21, minute=m, tzinfo=dt_util.DEFAULT_TIME_ZONE
+                ),
+                cost=0.10,
+            )
+            for m in [0, 15, 30, 45]
+        ]
+        mock_api_client.get_total_consumption.return_value = day2_yesterday_data
+
+        # Should fetch again on new day
+        await coordinator._async_update_data()
+        assert mock_api_client.get_total_consumption.call_count == 2
+
+    @patch("custom_components.mittfortum.coordinator.dt_util.now")
+    async def test_has_previous_day_data_detection(self, mock_now, coordinator):
+        """Test detection of previous day's data in response."""
+        # Mock current time as Jan 16, 2024 at 15:30
+        test_time = datetime(2024, 1, 16, 15, 30, 0)
+        mock_now.return_value = test_time.replace(tzinfo=dt_util.DEFAULT_TIME_ZONE)
+
+        # Create yesterday's data (Jan 15, 2024)
+        yesterday = test_time - timedelta(days=1)
+        yesterday_data = [
+            ConsumptionData(
+                value=0.42,
+                unit="kWh",
+                date_time=yesterday.replace(
+                    hour=21, minute=m, tzinfo=dt_util.DEFAULT_TIME_ZONE
+                ),
+                cost=0.10,
+            )
+            for m in [0, 15, 30, 45]
+        ]
+
+        # Create today's data (Jan 16, 2024)
+        today_data = [
+            ConsumptionData(
+                value=0.42,
+                unit="kWh",
+                date_time=test_time.replace(
+                    hour=10, minute=m, tzinfo=dt_util.DEFAULT_TIME_ZONE
+                ),
+                cost=0.10,
+            )
+            for m in [0, 15, 30]
+        ]
+
+        # Test with yesterday's data (should return True)
+        assert coordinator._has_previous_day_data(yesterday_data)
+
+        # Test with only today's data (should return False)
+        assert not coordinator._has_previous_day_data(today_data)
+
+        # Test with empty data
+        assert not coordinator._has_previous_day_data([])
+
+    @patch("custom_components.mittfortum.coordinator.dt_util.now")
+    async def test_retry_if_no_previous_day_data(
+        self, mock_now, coordinator, mock_api_client
+    ):
+        """Test retry logic when previous day's data not yet available."""
+        test_time = datetime(2024, 1, 16, 15, 10, 0)
+
+        # Create today's data (incomplete - no yesterday data yet)
+        today_data = [
+            ConsumptionData(
+                value=0.42,
+                unit="kWh",
+                date_time=test_time.replace(
+                    hour=10, minute=m, tzinfo=dt_util.DEFAULT_TIME_ZONE
+                ),
+                cost=0.10,
+            )
+            for m in [0, 15, 30]
+        ]
+
+        # Create yesterday's data
+        yesterday = test_time - timedelta(days=1)
+        yesterday_data = [
+            ConsumptionData(
+                value=0.42,
+                unit="kWh",
+                date_time=yesterday.replace(
+                    hour=21, minute=m, tzinfo=dt_util.DEFAULT_TIME_ZONE
+                ),
+                cost=0.10,
+            )
+            for m in [0, 15, 30, 45]
+        ]
+
+        # First fetch at 15:10 - only gets today's data (incomplete)
+        mock_now.return_value = test_time.replace(tzinfo=dt_util.DEFAULT_TIME_ZONE)
+        mock_api_client.get_total_consumption.return_value = today_data
+
+        await coordinator._async_update_data()
+        assert mock_api_client.get_total_consumption.call_count == 1
+        assert coordinator._waiting_for_data  # Still waiting
+
+        # Second fetch at 15:40 (30 min later) - gets yesterday's data
+        test_time = datetime(2024, 1, 16, 15, 40, 0)
+        mock_now.return_value = test_time.replace(tzinfo=dt_util.DEFAULT_TIME_ZONE)
+        mock_api_client.get_total_consumption.return_value = yesterday_data
+
+        await coordinator._async_update_data()
+        assert mock_api_client.get_total_consumption.call_count == 2
+        assert not coordinator._waiting_for_data  # Got data
+
+    @patch("custom_components.mittfortum.coordinator.dt_util.now")
+    async def test_should_fetch_logic_boundary_conditions(self, mock_now, coordinator):
+        """Test _should_fetch_now at exact boundary conditions."""
+        # Exactly at 15:00
+        test_time = datetime(2024, 1, 16, 15, 0, 0)
+        mock_now.return_value = test_time.replace(tzinfo=dt_util.DEFAULT_TIME_ZONE)
+        assert coordinator._should_fetch_now()
+
+        # One minute before 15:00
+        test_time = datetime(2024, 1, 16, 14, 59, 0)
+        mock_now.return_value = test_time.replace(tzinfo=dt_util.DEFAULT_TIME_ZONE)
+        assert not coordinator._should_fetch_now()
+
+        # Midnight
+        test_time = datetime(2024, 1, 16, 0, 0, 0)
+        mock_now.return_value = test_time.replace(tzinfo=dt_util.DEFAULT_TIME_ZONE)
+        assert not coordinator._should_fetch_now()
+
+        # Late at night (23:59)
+        test_time = datetime(2024, 1, 16, 23, 59, 0)
+        mock_now.return_value = test_time.replace(tzinfo=dt_util.DEFAULT_TIME_ZONE)
+        assert coordinator._should_fetch_now()  # Should still fetch if haven't today

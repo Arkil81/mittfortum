@@ -14,7 +14,7 @@ from .api import FortumAPIClient, OAuth2AuthClient
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
     from homeassistant.core import HomeAssistant
-from .const import DOMAIN, PLATFORMS, CONF_LOCALE
+from .const import CONF_LOCALE, DOMAIN, PLATFORMS
 from .coordinator import MittFortumDataCoordinator
 from .device import MittFortumDevice
 from .exceptions import AuthenticationError, MittFortumError

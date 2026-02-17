@@ -11,9 +11,9 @@ from ..const import (
     OAUTH_BASE_URL,
     OAUTH_CONFIG_URL,
     OAUTH_TOKEN_URL,
-    get_time_series_base_url,
     get_api_base_url,
-    get_auth_index_value
+    get_auth_index_value,
+    get_time_series_base_url,
 )
 
 
@@ -25,23 +25,25 @@ class APIEndpoints:
     TOKEN_EXCHANGE = OAUTH_TOKEN_URL
     USER_SESSION = f"{OAUTH_BASE_URL}/am/json/users?_action=idFromSession"
     THEME_REALM = "{OAUTH_BASE_URL}/openidm/config/ui/themerealm"
-    USER_DETAILS = (
-        "{OAUTH_BASE_URL}/am/json/realms/root/realms/alpha/users/{user_id}"
+    USER_DETAILS = "{OAUTH_BASE_URL}/am/json/realms/root/realms/alpha/users/{user_id}"
+    VALIDATE_GOTO = (
+        "{OAUTH_BASE_URL}/am/json/realms/root/realms/alpha/users?_action=validateGoto"
     )
-    VALIDATE_GOTO = "{OAUTH_BASE_URL}/am/json/realms/root/realms/alpha/users?_action=validateGoto"
 
     @staticmethod
     def get_auth_init_url(locale: str) -> str:
         """Get OAuth2 authorization URL."""
         return (
-            f"{OAUTH_AUTH_URL}?locale={locale.lower()}&authIndexType=service&authIndexValue={get_auth_index_value(locale).lower()}"
+            f"{OAUTH_AUTH_URL}?locale={locale.lower()}"
+            f"&authIndexType=service"
+            f"&authIndexValue={get_auth_index_value(locale).lower()}"
         )
-    
+
     @staticmethod
     def get_session_username_url(locale: str) -> str:
         """Get session username URL."""
         return f"{get_api_base_url(locale)}/get-session-username"
-    
+
     @staticmethod
     def get_session_url(locale: str) -> str:
         """Get session URL."""

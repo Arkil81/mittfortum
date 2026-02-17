@@ -68,7 +68,7 @@ class TestAPIEndpoints:
             to_date=datetime(2024, 1, 31),
             resolution="MONTH",
         )
-        
+
         assert "https://www.fortum.com/se/el/api/trpc" in result
         assert "loggedIn.timeSeries.listTimeSeries" in result
         assert "batch=1" in result
@@ -119,7 +119,7 @@ class TestAPIEndpoints:
             to_date=datetime(2024, 1, 31),
             resolution="DAY",
         )
-        
+
         assert "batch=1" in result
         assert "input=" in result
         # Verify the URL contains encoded JSON with both metering points

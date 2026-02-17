@@ -19,7 +19,15 @@ from homeassistant.helpers.httpx_client import get_async_client
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
-from ..const import OAUTH_CLIENT_ID, OAUTH_SCOPE, OAUTH_SECRET_KEY, get_api_base_url, get_auth_index_value, get_oauth_redirect_uri, get_fortum_base_url
+from ..const import (
+    OAUTH_CLIENT_ID,
+    OAUTH_SCOPE,
+    OAUTH_SECRET_KEY,
+    get_api_base_url,
+    get_auth_index_value,
+    get_fortum_base_url,
+    get_oauth_redirect_uri,
+)
 from ..exceptions import AuthenticationError, OAuth2Error
 from ..models import AuthTokens
 from .endpoints import APIEndpoints
@@ -49,7 +57,7 @@ class OAuth2AuthClient:
         password: str,
         locale: str,
         client_id: str = OAUTH_CLIENT_ID,
-        redirect_uri: str = None,
+        redirect_uri: str | None = None,
         secret_key: str = OAUTH_SECRET_KEY,
     ) -> None:
         """Initialize OAuth2 client."""
@@ -467,7 +475,9 @@ class OAuth2AuthClient:
 
     async def _verify_session_established(self, client) -> dict[str, Any]:
         """Verify that session is properly established."""
-        session_resp = await client.get(f"{get_api_base_url(self._locale)}/auth/session")
+        session_resp = await client.get(
+            f"{get_api_base_url(self._locale)}/auth/session"
+        )
 
         if session_resp.status_code != 200:
             raise OAuth2Error(
@@ -649,7 +659,9 @@ class OAuth2AuthClient:
             ],
         }
 
-        response = await client.post(APIEndpoints.get_auth_init_url(self._locale), json=login_payload)
+        response = await client.post(
+            APIEndpoints.get_auth_init_url(self._locale), json=login_payload
+        )
         if response.status_code != 200:
             raise OAuth2Error(f"User authentication failed: {response.status_code}")
 

@@ -28,7 +28,9 @@ TOKEN_EXPIRED_RETRY_MSG = "Token expired - retry required"
 class FortumAPIClient:
     """Main API client for Fortum tRPC services."""
 
-    def __init__(self, hass: HomeAssistant, auth_client: OAuth2AuthClient, locale: str) -> None:
+    def __init__(
+        self, hass: HomeAssistant, auth_client: OAuth2AuthClient, locale: str
+    ) -> None:
         """Initialize API client."""
         self._hass = hass
         self._auth_client = auth_client
@@ -254,9 +256,10 @@ class FortumAPIClient:
         to_date = today_start
 
         _LOGGER.debug(
-            "Fetching consumption data from %s to %s (excluding incomplete current day)",
+            "Fetching consumption data from %s to %s "
+            "(excluding incomplete current day)",
             from_date.isoformat(),
-            to_date.isoformat()
+            to_date.isoformat(),
         )
 
         # Try different resolution parameters for 15-minute data
@@ -267,7 +270,7 @@ class FortumAPIClient:
             try:
                 _LOGGER.debug(
                     "Attempting to fetch consumption data with resolution: %s",
-                    resolution
+                    resolution,
                 )
                 data = await self.get_consumption_data(
                     from_date=from_date,
@@ -289,15 +292,13 @@ class FortumAPIClient:
                 else:
                     _LOGGER.debug(
                         "Got empty data with resolution %s, trying next option",
-                        resolution
+                        resolution,
                     )
                     continue
 
             except (APIError, InvalidResponseError) as exc:
                 _LOGGER.debug(
-                    "Failed to fetch data with resolution %s: %s",
-                    resolution,
-                    exc
+                    "Failed to fetch data with resolution %s: %s", resolution, exc
                 )
                 last_exception = exc
                 continue
@@ -305,8 +306,7 @@ class FortumAPIClient:
         # If all attempts failed, raise the last exception
         if last_exception:
             _LOGGER.warning(
-                "All resolution attempts failed, last error: %s",
-                last_exception
+                "All resolution attempts failed, last error: %s", last_exception
             )
             raise last_exception
 

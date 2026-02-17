@@ -65,7 +65,7 @@ class TestInit:
 
             # Verify locale was passed to API client
             mock_api.assert_called_once_with(
-                mock_hass, 
+                mock_hass,
                 mock_auth_instance,
                 "SV",
             )
@@ -123,7 +123,7 @@ class TestInit:
 
             # Verify Finnish locale was passed to API client
             mock_api.assert_called_once_with(
-                mock_hass, 
+                mock_hass,
                 mock_auth_instance,
                 "FI",
             )
@@ -181,7 +181,7 @@ class TestInit:
 
             # Verify Norwegian locale was passed to API client
             mock_api.assert_called_once_with(
-                mock_hass, 
+                mock_hass,
                 mock_auth_instance,
                 "NO",
             )
