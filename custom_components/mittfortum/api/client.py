@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 from homeassistant.helpers.httpx_client import get_async_client
 
-from ..const import get_fortum_base_url, get_session_url
+from ..const import get_fortum_base_url, get_logged_in_path, get_session_url
 from ..exceptions import APIError, InvalidResponseError, UnexpectedStatusCodeError
 from ..models import ConsumptionData, CustomerDetails, MeteringPoint, TimeSeries
 from .endpoints import APIEndpoints
@@ -28,7 +28,9 @@ TOKEN_EXPIRED_RETRY_MSG = "Token expired - retry required"
 class FortumAPIClient:
     """Main API client for Fortum tRPC services."""
 
-    def __init__(self, hass: HomeAssistant, auth_client: OAuth2AuthClient, locale: str) -> None:
+    def __init__(
+        self, hass: HomeAssistant, auth_client: OAuth2AuthClient, locale: str
+    ) -> None:
         """Initialize API client."""
         self._hass = hass
         self._auth_client = auth_client
@@ -283,7 +285,10 @@ class FortumAPIClient:
                         "Gecko/20100101 Firefox/138.0"
                     ),
                     "Content-Type": "application/json",
-                    "Referer": f"{get_fortum_base_url(self._locale)}/inloggad/el",
+                    "Referer": (
+                        f"{get_fortum_base_url(self._locale)}/"
+                        f"{get_logged_in_path(self._locale)}"
+                    ),
                 }
 
                 # Only add Authorization header for non-session endpoints

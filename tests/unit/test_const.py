@@ -80,7 +80,7 @@ class TestLocaleSpecificFunctions:
     def test_get_auth_index_value_norwegian(self):
         """Test Norwegian auth index value."""
         result = get_auth_index_value("NO")
-        assert result == "NOB2CLogin"
+        assert result == "NoB2COGWLogin"
 
     def test_get_auth_index_value_invalid(self):
         """Test invalid locale raises ValueError."""

@@ -24,7 +24,7 @@ class TestAPIEndpoints:
         """Test Norwegian auth init URL."""
         result = APIEndpoints.get_auth_init_url("NO")
         assert "locale=no" in result
-        assert "authIndexValue=nob2clogin" in result
+        assert "authIndexValue=nob2cogwlogin" in result
         assert "authIndexType=service" in result
 
     def test_get_session_username_url_swedish(self):
@@ -68,7 +68,7 @@ class TestAPIEndpoints:
             to_date=datetime(2024, 1, 31),
             resolution="MONTH",
         )
-        
+
         assert "https://www.fortum.com/se/el/api/trpc" in result
         assert "loggedIn.timeSeries.listTimeSeries" in result
         assert "batch=1" in result
@@ -119,7 +119,7 @@ class TestAPIEndpoints:
             to_date=datetime(2024, 1, 31),
             resolution="DAY",
         )
-        
+
         assert "batch=1" in result
         assert "input=" in result
         # Verify the URL contains encoded JSON with both metering points

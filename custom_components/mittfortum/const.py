@@ -14,6 +14,7 @@ PLATFORMS: list[Platform] = [Platform.SENSOR]
 
 CONF_LOCALE = "locale"
 
+
 # API endpoints
 def get_fortum_base_url(locale: str) -> str:
     if locale == "SV":
@@ -24,11 +25,29 @@ def get_fortum_base_url(locale: str) -> str:
         return "https://www.fortum.com/no/strom"
     else:
         raise ValueError(f"Unsupported locale: {locale}")
+
+
 def get_api_base_url(locale: str) -> str:
     return f"{get_fortum_base_url(locale)}/api"
+
+
+def get_logged_in_path(locale: str) -> str:
+    if locale == "SV":
+        return "inloggad/el"
+    elif locale == "FI":
+        return "kirjautunut/sahkoa"
+    elif locale == "NO":
+        return "innlogget/strom"
+    else:
+        raise ValueError(f"Unsupported locale: {locale}")
+
+
 def get_trpc_base_url(locale: str) -> str:
     return f"{get_api_base_url(locale)}/trpc"
+
+
 OAUTH_BASE_URL = "https://sso.fortum.com"
+
 
 def get_auth_index_value(locale: str) -> str:
     if locale == "SV":
@@ -36,17 +55,20 @@ def get_auth_index_value(locale: str) -> str:
     elif locale == "FI":
         return "FIB2CLogin"
     elif locale == "NO":
-        return "NOB2CLogin"
+        return "NoB2COGWLogin"
     else:
         raise ValueError(f"Unsupported locale: {locale}")
+
 
 # Session endpoint (for customer details and metering points)
 def get_session_url(locale: str) -> str:
     return f"{get_api_base_url(locale)}/auth/session"
 
+
 # tRPC endpoints (only for time series data)
 def get_time_series_base_url(locale: str) -> str:
     return f"{get_trpc_base_url(locale)}/loggedIn.timeSeries.listTimeSeries"
+
 
 # API request configuration
 TRPC_BATCH_PARAM = "1"
@@ -67,8 +89,12 @@ COST_TYPES = {
 
 # OAuth2 configuration
 OAUTH_CLIENT_ID = "globalwebprod"
+
+
 def get_oauth_redirect_uri(locale: str) -> str:
     return f"{get_api_base_url(locale)}/auth/callback/ciamprod"
+
+
 OAUTH_SECRET_KEY = "shared_secret"
 OAUTH_SCOPE = ["openid", "profile", "crmdata"]
 
@@ -92,6 +118,7 @@ COST_SENSOR_KEY = "total_cost"
 # Data storage keys
 CONF_CUSTOMER_ID = "customer_id"
 CONF_METERING_POINTS = "metering_points"
+
 
 def get_cost_unit(locale: str) -> str:
     if locale == "SV":
