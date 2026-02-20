@@ -12,7 +12,7 @@ def extract_customer_id_from_token(id_token: str) -> str:
     try:
         payload = jwt.decode(id_token, options={"verify_signature": False})
         return payload["customerid"][0]["crmid"]
-    except (KeyError, IndexError, ValueError) as exc:
+    except (KeyError, IndexError, ValueError, Exception) as exc:
         raise ValueError(f"Failed to extract customer ID from token: {exc}") from exc
 
 

@@ -7,6 +7,7 @@ from custom_components.mittfortum.const import (
     get_auth_index_value,
     get_cost_unit,
     get_fortum_base_url,
+    get_logged_in_path,
     get_oauth_redirect_uri,
     get_session_url,
     get_time_series_base_url,
@@ -160,3 +161,23 @@ class TestLocaleSpecificFunctions:
         """Test invalid locale raises ValueError."""
         with pytest.raises(ValueError, match="Unsupported locale: DK"):
             get_cost_unit("DK")
+
+    def test_get_logged_in_path_swedish(self):
+        """Test Swedish logged-in path."""
+        result = get_logged_in_path("SV")
+        assert result == "inloggad/el"
+
+    def test_get_logged_in_path_finnish(self):
+        """Test Finnish logged-in path."""
+        result = get_logged_in_path("FI")
+        assert result == "kirjautunut/sahkoa"
+
+    def test_get_logged_in_path_norwegian(self):
+        """Test Norwegian logged-in path."""
+        result = get_logged_in_path("NO")
+        assert result == "innlogget/strom"
+
+    def test_get_logged_in_path_invalid(self):
+        """Test invalid locale raises ValueError."""
+        with pytest.raises(ValueError, match="Unsupported locale: DE"):
+            get_logged_in_path("DE")

@@ -488,3 +488,104 @@ class TestFortumAPIClient:
 
         with pytest.raises(APIError, match="Unexpected redirect to: /other/path"):
             client._handle_redirect_response(mock_response)
+
+    async def test_referer_header_swedish_locale(self, mock_hass, mock_auth_client):
+        """Test that Referer header uses correct Swedish localized path."""
+        mock_auth_client.access_token = "test_token"
+        mock_auth_client.session_cookies = {}
+        mock_auth_client.is_token_expired.return_value = False
+        mock_auth_client.needs_renewal.return_value = False
+
+        client = FortumAPIClient(mock_hass, mock_auth_client, "SV")
+
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.text = '{"result": "success"}'
+        mock_response.json.return_value = {"result": "success"}
+
+        with patch(
+            "custom_components.mittfortum.api.client.get_async_client"
+        ) as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get.return_value = mock_response
+            mock_client.cookies = {}
+
+            mock_get_client.return_value.__aenter__.return_value = mock_client
+            mock_get_client.return_value.__aexit__.return_value = None
+
+            await client._get("https://www.fortum.com/se/el/api/auth/session")
+
+            # Verify Referer header contains Swedish localized path
+            call_args = mock_client.get.call_args
+            headers = call_args[1]["headers"]
+            assert "Referer" in headers
+            assert headers["Referer"] == "https://www.fortum.com/se/el/inloggad/el"
+
+    async def test_referer_header_finnish_locale(self, mock_hass, mock_auth_client):
+        """Test that Referer header uses correct Finnish localized path."""
+        mock_auth_client.access_token = "test_token"
+        mock_auth_client.session_cookies = {}
+        mock_auth_client.is_token_expired.return_value = False
+        mock_auth_client.needs_renewal.return_value = False
+
+        client = FortumAPIClient(mock_hass, mock_auth_client, "FI")
+
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.text = '{"result": "success"}'
+        mock_response.json.return_value = {"result": "success"}
+
+        with patch(
+            "custom_components.mittfortum.api.client.get_async_client"
+        ) as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get.return_value = mock_response
+            mock_client.cookies = {}
+
+            mock_get_client.return_value.__aenter__.return_value = mock_client
+            mock_get_client.return_value.__aexit__.return_value = None
+
+            await client._get("https://www.fortum.com/fi/sahkoa/api/auth/session")
+
+            # Verify Referer header contains Finnish localized path
+            call_args = mock_client.get.call_args
+            headers = call_args[1]["headers"]
+            assert "Referer" in headers
+            assert (
+                headers["Referer"]
+                == "https://www.fortum.com/fi/sahkoa/kirjautunut/sahkoa"
+            )
+
+    async def test_referer_header_norwegian_locale(self, mock_hass, mock_auth_client):
+        """Test that Referer header uses correct Norwegian localized path."""
+        mock_auth_client.access_token = "test_token"
+        mock_auth_client.session_cookies = {}
+        mock_auth_client.is_token_expired.return_value = False
+        mock_auth_client.needs_renewal.return_value = False
+
+        client = FortumAPIClient(mock_hass, mock_auth_client, "NO")
+
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.text = '{"result": "success"}'
+        mock_response.json.return_value = {"result": "success"}
+
+        with patch(
+            "custom_components.mittfortum.api.client.get_async_client"
+        ) as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get.return_value = mock_response
+            mock_client.cookies = {}
+
+            mock_get_client.return_value.__aenter__.return_value = mock_client
+            mock_get_client.return_value.__aexit__.return_value = None
+
+            await client._get("https://www.fortum.com/no/strom/api/auth/session")
+
+            # Verify Referer header contains Norwegian localized path
+            call_args = mock_client.get.call_args
+            headers = call_args[1]["headers"]
+            assert "Referer" in headers
+            assert (
+                headers["Referer"] == "https://www.fortum.com/no/strom/innlogget/strom"
+            )
